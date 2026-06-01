@@ -12,17 +12,28 @@ STAGE 2에서 생성된 backend, frontend, tests 코드를 교차 검증한다. 
 ## 입력
 
 - `session_id`: orchestrator가 전달한 session-id
+- `mode`: `default`(미지정 시) | `feature` — feature 모드는 add-feature로 생성된 코드만 검토
+- `feature_slug`: `mode=feature`일 때만 사용. 검토 대상 기능의 slug
+
+> **모드 분기**: `mode=feature`이면 리뷰 대상을 `features/{feature_slug}/`로 한정하고 출력을 `features/{feature_slug}/review.md`에 쓴다. 그 외에는 기존 절차를 따른다.
 
 ## 절차
 
 ### 1단계 — 파일 목록 일괄 파악 (tool 호출 상한 관리)
 
 1. Bash로 파일 목록을 일괄 확인한다 (개별 Read 최소화):
-   ```bash
-   find .app-artifacts/{session_id}/backend -type f | sort
-   find .app-artifacts/{session_id}/frontend -type f | sort
-   find .app-artifacts/{session_id}/tests -type f | sort
-   ```
+   - **default 모드**:
+     ```bash
+     find .app-artifacts/{session_id}/backend -type f | sort
+     find .app-artifacts/{session_id}/frontend -type f | sort
+     find .app-artifacts/{session_id}/tests -type f | sort
+     ```
+   - **feature 모드**:
+     ```bash
+     find .app-artifacts/{session_id}/features/{feature_slug}/backend -type f | sort
+     find .app-artifacts/{session_id}/features/{feature_slug}/frontend -type f | sort
+     find .app-artifacts/{session_id}/features/{feature_slug}/tests -type f | sort
+     ```
 2. 파일 트리를 보고 구조 이상(디렉토리 누락, 예상 파일 부재)을 1차 파악한다.
 
 ### 2단계 — 계약 파일 확인
@@ -103,4 +114,5 @@ STAGE 2에서 생성된 backend, frontend, tests 코드를 교차 검증한다. 
 
 ## 출력
 
-- `.app-artifacts/{session_id}/review.md` — BLOCKER/WARN/INFO 분류 코드 리뷰 결과
+- **default 모드**: `.app-artifacts/{session_id}/review.md`
+- **feature 모드**: `.app-artifacts/{session_id}/features/{feature_slug}/review.md`

@@ -12,10 +12,16 @@ tools: Read, Write, Bash
 ## 입력
 
 - `session_id`: 검토 대상 세션 식별자 (예: `20260601-todo-app`)
+- `mode`: `default`(미지정 시) | `feature` — feature 모드는 add-feature로 생성된 코드만 검토
+- `feature_slug`: `mode=feature`일 때만 사용. 검토 대상 기능의 slug
+
+> **모드 분기**: `mode=feature`이면 검토 대상을 `features/{feature_slug}/`로 한정하고 출력을 `features/{feature_slug}/security.md`에 쓴다. 그 외에는 기존 절차를 따른다.
 
 ## 절차
 
-1. `find .app-artifacts/{session_id}/backend -type f`, `find .app-artifacts/{session_id}/frontend -type f`로 소스 파일 목록을 일괄 파악한다. (tool 호출 상한 관리 — 개별 Read 최소화)
+1. **파일 목록 파악**:
+   - default 모드: `find .app-artifacts/{session_id}/backend -type f`, `find .app-artifacts/{session_id}/frontend -type f`
+   - feature 모드: `find .app-artifacts/{session_id}/features/{feature_slug}/backend -type f`, `find .app-artifacts/{session_id}/features/{feature_slug}/frontend -type f`
 2. `.app-artifacts/{session_id}/arch.md`와 `api-contract.json`을 읽어 스택과 API 구조를 파악한다.
 3. 아래 보안 검토 항목을 순서대로 검사한다. 핵심 파일(라우터, 컨트롤러, 미들웨어, API 클라이언트, 진입점)을 선별적으로 읽어 검토한다.
 
@@ -60,7 +66,9 @@ tools: Read, Write, Bash
    - **MEDIUM**: 중간 위험도 (입력 검증 누락, 보안 헤더 미설정)
    - **LOW**: 낮은 위험도 (디버그 로그, 와일드카드 의존성)
 
-5. `.app-artifacts/{session_id}/security.md`에 결과를 저장한다.
+5. 결과를 저장한다:
+   - default 모드: `.app-artifacts/{session_id}/security.md`
+   - feature 모드: `.app-artifacts/{session_id}/features/{feature_slug}/security.md`
 
 ## 출력 형식 (security.md)
 

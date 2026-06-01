@@ -12,8 +12,28 @@ tools: Read, Write, Bash
 ## 입력
 
 - `session_id`: orchestrator가 전달한 session-id
+- `mode`: `default`(미지정 시) | `feature` — feature 모드는 기존 앱에 기능을 추가할 때 사용
+- `feature_slug`: `mode=feature`일 때만 사용. 추가할 기능의 slug (예: `user-auth`)
 
 ## 절차
+
+> **모드 분기**: 인자에 `mode=feature`가 있으면 아래 **feature 모드 절차**를 따른다. 그 외에는 **기존 절차**를 따른다.
+
+---
+
+### feature 모드 (mode=feature)
+
+1. `.app-artifacts/{session_id}/features/{feature_slug}/feature-spec.json`을 읽어 `new_models`와 `new_endpoints`를 파악한다.
+2. `.app-artifacts/{session_id}/arch.md`를 읽어 확정된 스택(테스트 프레임워크 결정용)을 파악한다.
+3. `.app-artifacts/{session_id}/api-contract.json`을 읽어 append 반영된 전체 계약을 참조한다.
+4. **`backend/`와 `frontend/` 소스 파일은 읽지 않는다.** (병렬 경쟁 조건 회피 원칙 유지)
+5. **출력 루트를 `.app-artifacts/{session_id}/features/{feature_slug}/tests/`로 사용한다.** 하위에 `backend/unit/`, `backend/integration/`, `frontend/` 구조를 사용한다.
+6. **feature-spec.json의 `new_models`·`new_endpoints`에 해당하는 항목에 대해서만** 테스트를 생성한다. 기존 모델 테스트 재생성 금지.
+7. **`.app-artifacts/{session_id}/tests/` 하위 기존 파일은 절대 읽지도 쓰지도 않는다.**
+
+---
+
+### 기존 절차 (default / 미지정)
 
 1. `.app-artifacts/{session_id}/arch.md`를 읽어 확정된 스택(backend/frontend)을 확인한다.
 2. `.app-artifacts/{session_id}/api-contract.json`을 읽어 `models`와 `endpoints`를 파악한다.
@@ -64,6 +84,11 @@ tools: Read, Write, Bash
 
 ## 출력
 
-- `.app-artifacts/{session_id}/tests/backend/unit/` — 모델·서비스 단위 테스트
-- `.app-artifacts/{session_id}/tests/backend/integration/` — API 엔드포인트 통합 테스트
-- `.app-artifacts/{session_id}/tests/frontend/` — 프론트엔드 컴포넌트 테스트
+- **default 모드**:
+  - `.app-artifacts/{session_id}/tests/backend/unit/` — 모델·서비스 단위 테스트
+  - `.app-artifacts/{session_id}/tests/backend/integration/` — API 엔드포인트 통합 테스트
+  - `.app-artifacts/{session_id}/tests/frontend/` — 프론트엔드 컴포넌트 테스트
+- **feature 모드**:
+  - `.app-artifacts/{session_id}/features/{feature_slug}/tests/backend/unit/` — 신규 모델 단위 테스트
+  - `.app-artifacts/{session_id}/features/{feature_slug}/tests/backend/integration/` — 신규 엔드포인트 통합 테스트
+  - `.app-artifacts/{session_id}/features/{feature_slug}/tests/frontend/` — 신규 컴포넌트 테스트

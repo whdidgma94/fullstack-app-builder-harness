@@ -12,8 +12,28 @@ tools: Read, Write, Bash
 ## 입력
 
 - `session_id`: orchestrator가 전달한 session-id
+- `mode`: `default`(미지정 시) | `feature` — feature 모드는 기존 앱에 기능을 추가할 때 사용
+- `feature_slug`: `mode=feature`일 때만 사용. 추가할 기능의 slug (예: `user-auth`)
 
 ## 절차
+
+> **모드 분기**: 인자에 `mode=feature`가 있으면 아래 **feature 모드 절차**를 따른다. 그 외에는 **기존 절차**를 따른다.
+
+---
+
+### feature 모드 (mode=feature)
+
+1. `.app-artifacts/{session_id}/features/{feature_slug}/feature-spec.json`을 읽어 이 기능이 추가하는 `new_models`와 `new_endpoints`를 파악한다.
+2. `.app-artifacts/{session_id}/arch.md`를 읽어 확정된 backend 스택을 파악한다 (문맥 참조용).
+3. `.app-artifacts/{session_id}/api-contract.json`을 읽어 기존 모델·엔드포인트를 파악한다 (충돌 방지·문맥 참조용).
+4. **출력 루트를 `.app-artifacts/{session_id}/features/{feature_slug}/backend/`로 사용한다.** (orchestrator가 사전 생성함)
+5. feature-spec.json의 `new_models`·`new_endpoints`에 해당하는 모델/라우터/서비스 파일만 생성한다.
+6. **`.app-artifacts/{session_id}/backend/` 하위 기존 파일은 절대 읽지도 쓰지도 않는다.**
+7. 기존 앱에 통합하려면 필요한 등록 코드(예: 라우터 인덱스에 추가할 라인)는 파일을 수정하지 않고, `features/{feature_slug}/backend/INTEGRATION.md`에 안내 텍스트만 남긴다.
+
+---
+
+### 기존 절차 (default / 미지정)
 
 1. `.app-artifacts/{session_id}/arch.md`를 읽어 확정된 backend 스택을 확인한다 ("## 확정 스택" 섹션).
 2. `.app-artifacts/{session_id}/api-contract.json`을 읽어 `models`와 `endpoints`를 파악한다.
@@ -68,4 +88,5 @@ tools: Read, Write, Bash
 
 ## 출력
 
-- `.app-artifacts/{session_id}/backend/` 하위 백엔드 소스 트리 (모델, 라우터, 서비스, 진입점, 의존성 매니페스트)
+- **default 모드**: `.app-artifacts/{session_id}/backend/` 하위 백엔드 소스 트리 (모델, 라우터, 서비스, 진입점, 의존성 매니페스트)
+- **feature 모드**: `.app-artifacts/{session_id}/features/{feature_slug}/backend/` 하위 신규 기능 소스 트리 + `INTEGRATION.md`
