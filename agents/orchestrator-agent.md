@@ -12,7 +12,7 @@ tools: Read, Write, Edit, Bash, Task
 ## 입력
 
 - `idea`: 자연어 앱 아이디어 1줄 (예: "팀 단위 할 일 관리 앱")
-- `mode`: 실행 모드 — `full`(전체) | `stage1`(STAGE 1만) | `stage2`(STAGE 2만) | `export`(내보내기) | `add-feature`(기존 앱에 기능 추가)
+- `mode`: 실행 모드 — `full`(전체) | `stage1`(STAGE 1만) | `stage2`(STAGE 2만) | `export`(내보내기) | `add-feature`(기존 앱에 기능 추가) | `build-apk`(Android APK 빌드)
 - `target`: export 모드에서만 사용. 복사 대상 디렉토리 경로
 - `session_id`: add-feature 모드에서만 사용. 대상 앱의 기존 session-id (새로 생성하지 않음)
 - `feature_description`: add-feature 모드에서만 사용. 추가할 기능 자연어 설명
@@ -154,9 +154,35 @@ tools: Read, Write, Edit, Bash, Task
     - CRITICAL/BLOCKER가 있으면 "해결 권장" 경고를 표시하되 사용자 결정에 따른다.
     - 사용자 최종 승인 시 완성 처리.
 
+### BUILD-APK 모드 (mode=build-apk)
+
+32. 인자에서 `session_id`, `app_id`(선택), `app_name`(선택), `api_url`(선택)을 파싱한다.
+33. **전제 검증**: `.app-artifacts/{session_id}/frontend/`가 존재하는지 확인한다. 없으면 "먼저 `/build` 또는 `/generate`를 실행하세요."를 안내하고 종료한다.
+34. `arch.md`를 읽어 프론트엔드 스택을 확인한다. React 또는 Vue가 아니면 "이 스택은 APK 빌드를 지원하지 않습니다."를 안내하고 종료한다.
+35. **빌드 도구 존재 확인** — 결과를 `tools_available` 인자로 apk-builder에 전달한다:
+    ```bash
+    which node && node --version
+    java -version 2>&1 | head -1
+    echo $ANDROID_HOME
+    ls $ANDROID_HOME/platform-tools/adb 2>/dev/null
+    ```
+    - node ○, java ○, ANDROID_HOME ○ → `tools_available=full`
+    - java ✗ → `tools_available=no-java`
+    - ANDROID_HOME 미설정 또는 adb 미발견 → `tools_available=no-sdk`
+    - node ✗ → `tools_available=none`
+36. `tools_available`이 `full`이 아니면 사용자에게 미설치 도구를 안내한다 (계속 진행 — apk-builder가 설정 파일과 스크립트를 생성함).
+37. **apk-builder** agent를 Task로 호출한다.
+    - 인자: `session_id={session_id}`, `app_id={app_id}`, `app_name={app_name}`, `api_url={api_url}`, `tools_available={tools_available}`
+    - 기대 산출물: `.app-artifacts/{session_id}/apk/` 하위 파일 + (빌드 성공 시) APK 파일
+38. apk-builder 완료 후 `apk-build.md`를 읽어 결과를 사용자에게 보고한다:
+    - **빌드 성공 시**: APK 경로, ADB 설치 명령 안내
+    - **스크립트 생성 시**: "build-apk.sh를 실행하거나 Android Studio에서 `apk/android/`를 여세요." 안내
+    - 항상: `apk/` 디렉토리에 생성된 파일 목록
+
 ## 출력
 
 - `.app-artifacts/{session-id}/` — session root 디렉토리 (Bash mkdir로 직접 생성)
 - 파이프라인 진행 결과 (각 하위 agent가 산출물 파일을 직접 생성)
 - 체크포인트 #1, #2 안내 메시지 (사용자 대화)
 - 체크포인트 AF-1, AF-2 안내 메시지 (add-feature 모드)
+- apk-build.md 결과 보고 (build-apk 모드)

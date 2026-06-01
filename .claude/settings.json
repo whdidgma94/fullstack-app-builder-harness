@@ -14,10 +14,20 @@
       "Bash(stat *)",
       "Bash(cat *)",
       "Bash(which *)",
+      "Bash(chmod +x *)",
       "Bash(node --version)",
       "Bash(npm --version)",
+      "Bash(npm install)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(npx cap *)",
+      "Bash(npx *)",
+      "Bash(java -version)",
+      "Bash(java *)",
       "Bash(python3 --version)",
-      "Bash(docker --version)"
+      "Bash(docker --version)",
+      "Bash(echo $ANDROID_HOME)",
+      "Bash(./gradlew *)"
     ],
     "deny": [
       "Bash(rm -rf /*)",
